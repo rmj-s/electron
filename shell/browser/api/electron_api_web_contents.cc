@@ -1763,8 +1763,17 @@ void WebContents::OnGetDefaultPrinter(
     return;
   }
 
-  base::string16 printer_name =
-      device_name.empty() ? default_printer : device_name;
+  base::string16 printer_name;
+  if (device_name.empty()) {
+    printer_name = default_printer;
+
+    // If there are no valid printers available on the network, bail.
+    if (printer_name.empty() || !IsDeviceNameValid(device_name)) {
+      std::move(print_callback).Run(false, "no valid printers available");
+      return;
+    }
+  }
+
   print_settings.SetStringKey(printing::kSettingDeviceName, printer_name);
 
   auto* print_view_manager =
